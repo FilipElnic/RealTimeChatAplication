@@ -69,16 +69,18 @@ function ChatRoom() {
 
     const { uid, photoURL } = auth.currentUser;
 
-    await addDoc(messagesRef, {
-      text: formValue,
-      createdAt: serverTimestamp(),
-      uid,
-      photoURL,
-    });
-
-    setFormValue("");
-
-    dummy.current.scrollIntoView({ behavior: "smooth" });
+    try {
+      await addDoc(messagesRef, {
+        text: formValue,
+        createdAt: serverTimestamp(),
+        uid,
+        photoURL,
+      });
+      setFormValue("");
+      dummy.current.scrollIntoView({ behavior: "smooth" });
+    } catch (error) {
+      console.error("Error adding document: ", error);
+    }
   };
 
   return (

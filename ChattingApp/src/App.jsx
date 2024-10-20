@@ -1,6 +1,6 @@
 import "./App.css";
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { addDoc, getFirestore, serverTimestamp } from "firebase/firestore";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -10,6 +10,7 @@ import {
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useRef, useState } from "react";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -54,17 +55,49 @@ function SignOut() {
 }
 
 function ChatRoom() {
+  const dummy = useRef();
+
   const messagesRef = collection(firestore, "messages");
   const messagesQuery = query(messagesRef, orderBy("createdAt"), limit(25));
 
   const [messages] = useCollectionData(messagesQuery, { idField: "id" });
+
+  const [formValue, setFormValue] = useState("");
+
+  const sendMessage = async (e) => {
+    e.preventDefault();
+
+    const { uid, photoURL } = auth.currentUser;
+
+    await addDoc(messagesRef, {
+      text: formValue,
+      createdAt: serverTimestamp(),
+      uid,
+      photoURL,
+    });
+
+    setFormValue("");
+
+    dummy.current.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <>
       <div>
         {messages &&
           messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
+
+        <div ref={dummy}></div>
       </div>
+
+      <form onSubmit={sendMessage}>
+        <input
+          value={formValue}
+          onChange={(e) => setFormValue(e.target.value)}
+        />
+        <button type="submit">Send</button>
+      </form>
+
       <div>
         <SignOut />
       </div>
@@ -73,8 +106,16 @@ function ChatRoom() {
 }
 
 function ChatMessage(props) {
-  const { text, uid } = props.message;
-  return <p>{text}</p>;
+  const { text, uid, photoURL } = props.message;
+
+  const messageClass = uid === auth.currentUser.uid ? "sent" : "received";
+
+  return (
+    <div className={`message ${messageClass}`}>
+      <img src={photoURL} alt="profile" />
+      <p>{text}</p>
+    </div>
+  );
 }
 
 export default App;

@@ -69,6 +69,11 @@ function ChatRoom() {
 
     const { uid, photoURL } = auth.currentUser;
 
+    if (!uid) {
+      console.error("User is not authenticated");
+      return;
+    }
+
     try {
       await addDoc(messagesRef, {
         text: formValue,
